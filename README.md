@@ -24,11 +24,15 @@ For inplaceprod:
 inplaceprod(mesPdfDotDeltasTens, convKerTens);
 ```
 
+If you are going to be playing with the parameters, please note the ad hoc line 68 in main.m, this line might also need to be changed.
+```
+% There can be a problem of enlarging variance for harmonic measurement function (such as with rotation matrix in 4D state case)    
+filtPdf(filtPdf<1e-11) = 0;
+``` 
+
 ## User can swich between number of models:
 
-### 4D Model with 1D/3D measurement
-
-This model can be used by modelChoose = 4;/modelChoose = 41; (3D measurement 1D measurement)
+### 4D Model
  
 The state is the vehicle horizontal position $\mathbf{p}_k^\mathrm{W} = [p_k^{x,\mathrm{W}}, p_k^{y,\mathrm{W}}]^T$ [m] and velocity $\mathbf{v}_k^\mathrm{W} = [v_k^{x,\mathrm{W}}, v_k^{y,\mathrm{W}}]^T$ [m/sec] in a world (W) frame aligned with the geographic north, while the measurement is given by the barometric altimeter, which reads the vehicle altitude above the mean sea level (MSL) $\hslash_k^\mathrm{MSL}$ [m], and the odometer, which provides the vehicle velocity in the *body* (B) frame $\mathbf{v}_k^\mathrm{B} = [v_k^{x,\mathrm{B}}, v_k^{y,\mathrm{B}}]^T$ [m/sec].
 
@@ -65,7 +69,6 @@ $$
 \end{bmatrix} + \mathbf{v}_k.
 $$
 
-For 1D variant the measurement is only the vehicle altitude above mean sea level. The 1D variant does not offer enough information about the vehicle position and all filters diverge when the vehicle gets to a place where the map is not informative enought i.e. the terrain is flat. 
 
 ### 3D Model
 
