@@ -42,6 +42,9 @@ for dim=dims % FFT over all dimensions
     subs{dim} = ifun(Npa(dim),Npa(dim)); % Padding indices
 end
 
+% Use this in case the mex file not working
+% mesPdfDotDeltasTens = mesPdfDotDeltasTens.*convKerTens;
+
 % Convolution in frequency domain (inplaceprod saves memory)
 inplaceprod(mesPdfDotDeltasTens, convKerTens);
 

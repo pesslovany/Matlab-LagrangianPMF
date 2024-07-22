@@ -6,13 +6,14 @@ timeSteps = 1:1:length(souradniceGNSS);
 % Last time
 endTime = length(timeSteps);
 
+
 switch modelChoose
     case 3 % 3D
         % System parameters
         model.nx = 3; % state dimension
         model.nz = 1; % measurement dimension
         model.dt = 1; % time step
-        model.Q = blkdiag(25*eye(2),0.05); % system noise
+        model.Q = blkdiag(36*eye(2),0.05); % system noise
         model.u = [ [diff(souradniceGNSS(1:2,timeSteps),1,2) [0;0]] + sqrt(model.Q(1:2,1:2))*randn(2,endTime); zeros(1,endTime)] ; % Input
         model.invQ = inv(model.Q);
         model.R = 3; % measurement noise covariance for both modes
@@ -38,7 +39,11 @@ switch modelChoose
         model.z = model.hfunct(model.x,0,0)+sqrt(model.R)*randn(model.nz,length(model.x));
         model.z(1,:) = hB; % add real measurements
         model.V.pdf = gmdistribution(model.meanV',repmat(model.R,1,1,1),model.wV); % Meas noise pdf
-    case 4 %4D
+        % UKF Params
+        model.ukfOn = 1; % 0 - disabled, 1 - enabled
+        model.kappa = 1;
+        model.SPnum = 2*model.nx+1;
+    case 4 % 4D
         model.nx = 4; % state dimension
         model.nz = 3; % measurement dimension
         model.u = zeros(model.nx,endTime);
@@ -49,12 +54,12 @@ switch modelChoose
             model.dt^2/2 0 model.dt 0;
             0 model.dt^2/2 0 model.dt]; % system noise
         model.invQ = inv(model.Q);
-        model.R = diag([2, 1, 1].^2); % measurement noise covariance for both modes %2
+        model.R = diag([3, 1, 1].^2); % measurement noise covariance for both modes %2
         model.invR = inv(model.R);
         % PMF parameters
-        model.Npa = [51 51 31 31]; % number of points per axis
+        model.Npa = [51 51 41 41]; % number of points per axis
         model.N = prod(model.Npa); % number of points - total
-        model.noPart = floor(1.8*N); % number of particles for PF
+        model.noPart = floor(1.8*model.N); % number of particles for PF
         model.sFactor = 6; % scaling factor (number of sigmas covered by the grid)
         model.meanV = [0; 0; 0]; % Mean values of components of meas noise
         model.wV = 1; % weights
@@ -76,6 +81,10 @@ switch modelChoose
         model.z = model.hfunct(model.x,0,0); % Measurements
         model.z(1,:) = hB; % add real data as measurement
         model.z(2:3,:) = model.z(2:3,:)+chol(model.R(2:3,2:3))*randn(size(model.z(2:3,:)));
+        % UKF Params
+        model.ukfOn = 1; % 0 - disabled, 1 - enabled
+        model.kappa = 1;
+        model.SPnum = 2*model.nx+1;
     otherwise
         disp('Error: unsupported model')
 end
