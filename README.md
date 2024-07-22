@@ -26,11 +26,9 @@ inplaceprod(mesPdfDotDeltasTens, convKerTens);
 
 ## User can swich between number of models:
 
-### 3D Model
+### 4D Model with 1D/3D measurement
 
-### 4D Model with 1D/2D measurement
-
-This model can be used by modelChoose = 4;/modelChoose = 41; (2D measurement 1D measurement)
+This model can be used by modelChoose = 4;/modelChoose = 41; (3D measurement 1D measurement)
  
 The state is the vehicle horizontal position $\mathbf{p}_k^\mathrm{W} = [p_k^{x,\mathrm{W}}, p_k^{y,\mathrm{W}}]^T$ [m] and velocity $\mathbf{v}_k^\mathrm{W} = [v_k^{x,\mathrm{W}}, v_k^{y,\mathrm{W}}]^T$ [m/sec] in a world (W) frame aligned with the geographic north, while the measurement is given by the barometric altimeter, which reads the vehicle altitude above the mean sea level (MSL) $\hslash_k^\mathrm{MSL}$ [m], and the odometer, which provides the vehicle velocity in the *body* (B) frame $\mathbf{v}_k^\mathrm{B} = [v_k^{x,\mathrm{B}}, v_k^{y,\mathrm{B}}]^T$ [m/sec].
 
@@ -68,3 +66,18 @@ $$
 $$
 
 For 1D variant the measurement is only the vehicle altitude above mean sea level. The 1D variant does not offer enough information about the vehicle position and all filters diverge when the vehicle gets to a place where the map is not informative enought i.e. the terrain is flat. 
+
+### 3D Model
+
+The state is the vehicle horizontal position $\mathbf{p}_k^\mathrm{W} = [p_k^{x,\mathrm{W}}, p_k^{y,\mathrm{W}}]^T$ [m] and barometer bias $\mathbf{b}_k$ [m]. The measurement is given by the barometric altimeter, which reads the vehicle altitude above the mean sea level (MSL) $\hslash_k^\mathrm{MSL}$ [m]. Input $\mathbf{u}_k$ is given by shift, this shift can be given by a combination of odometer (information in the body frame) and magnetometer (to tie the odometer information to the world frame). For our purpose the odometer/magnetometer joined information is simulated.
+
+The model reads:
+
+$$
+\mathbf{x}_{k+1} = \begin{bmatrix} \mathbf{p}_k^{\mathrm{W}} \\ \mathbf{b}_k
+\end{bmatrix} = \mathbf{x}_k + \mathbf{u}_k + \mathbf{w}_k,
+$$
+
+$$
+\mathbf{z}_k = \hslash_k^\mathrm{MSL}= \mathrm{terMap}(\mathbf{p}_k^\mathrm{W}) + \mathbf{v}_k.
+$$
