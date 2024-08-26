@@ -24,12 +24,6 @@ For inplaceprod:
 inplaceprod(mesPdfDotDeltasTens, convKerTens);
 ```
 
-If you are going to be playing with the parameters, please note the ad hoc line 68 in main.m, this line might also need to be changed.
-```
-% There can be a problem of enlarging variance for harmonic measurement function (such as with rotation matrix in 4D state case)    
-filtPdf(filtPdf<1e-11) = 0;
-``` 
-
 ## User can swich between number of models:
 
 ### 4D Model

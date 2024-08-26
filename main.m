@@ -10,18 +10,18 @@ clear variables
 close all
 format shortG
 
-modelChoose = 3; % choose model 3D - 3, 4D with 2D measurement - 4
+modelChoose = 4; % choose model 3D - 3, 4D with 2D measurement - 4
 
 load('data.mat') % map of terrain
 % Map interpolant for measurement
-vysky = griddedInterpolant(souradniceX',souradniceY',souradniceZ',"linear","nearest");
+vysky = griddedInterpolant(souradniceX',souradniceY',souradniceZ',"linear","none");
 % Time steps
 timeSteps = 1:1:length(souradniceGNSS);
 % Last time
 endTime = length(timeSteps);
 
 % Number of Monte Carlo simulations
-MC = 10;
+MC = 1;
 
 % For cycle over Monte Carlo simulations
 for mc = 1:1:MC
@@ -64,9 +64,7 @@ for mc = 1:1:MC
         %% Grid-based Filter
         tic
         % Measurement update
-        [filtPdf] = gbfMeasUpdate(predGrid,nz,k,z(:,k),V,predPdf,predGridDelta(:,k),hfunct); % Measurement update
-        % There can be a problem of enlarging variance for harmonic measurement function (such as with rotation matrix in 4D case)    
-        filtPdf(filtPdf<1e-11) = 0;            
+        [filtPdf] = gbfMeasUpdate(predGrid,nz,k,z(:,k),V,predPdf,predGridDelta(:,k),hfunct); % Measurement update           
         % Filtering mean and var
         filtMeanPMF(:,k) = predGrid*filtPdf*prod(predGridDelta(:,k)); % Measurement update mean
         chip_ = (predGrid-filtMeanPMF(:,k));
@@ -86,6 +84,7 @@ for mc = 1:1:MC
         tic
         %Measurement Update
         predThrMeasEq = hfunct(ksiPrior,zeros(nz,1),k); % Prediction density grid through measurement EQ
+        predThrMeasEq(1,isnan(predThrMeasEq(1,:))) = inf; % To protect from map extrapolations
         pom = z(:,k)'-predThrMeasEq'; %Measurement - measurementEQ(Grid)
         w = pdf(V.pdf,pom); % Weights
         w = w/sum(w); % Normalization of weights

@@ -13,6 +13,7 @@ function [measPdf] = gbfMeasUpdate(predGrid, nz, k, z, noiseV, predDensityProb, 
 % measPdf - measurement pdf
 
 predGridTrsf = hfunct(predGrid,zeros(nz,1),k); %Prediction density grid through measurement EQ
+predGridTrsf(1,isnan(predGridTrsf(1,:))) = inf; % To protect from map extrapolations
 inov = z'-predGridTrsf'; %Measurement - measurementEQ(Grid)
 measPdfNoNorm =  pdf(noiseV.pdf,inov).*predDensityProb; % Filtration density unnormalized
 measPdf = measPdfNoNorm/(prod(predGridStep)*sum(measPdfNoNorm)); %Normalization

@@ -24,9 +24,10 @@ var = measVar + inv(F)*Q*inv(F'); % second moment of the grid to interp on
 [measGridNew, gridStepNew, gridDimNew, ~, eigVectNew] = gridCreation(measMean,var,sFactor,nx,Npa); % create the grid to interp on
 
 %% Interpolation
-Fint = griddedInterpolant(gridDim,reshape(measPdf,Npa),"linear","nearest"); % interpolant
+Fint = griddedInterpolant(gridDim,reshape(measPdf,Npa),"linear","none"); % interpolant
 inerpOn = inv(eigVect)*(measGridNew - center); % Grid to inter on transformed to rotated space
 measPdfNew = Fint(inerpOn')'; % Interpolation
+measPdfNew(isnan(measPdfNew)) = 0; % Zeros for extrapolation, otherwise artifacts would appear
 
 end
 
