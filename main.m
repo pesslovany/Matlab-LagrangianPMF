@@ -10,6 +10,8 @@ clear variables
 close all
 format shortG
 
+addpath(genpath(pwd)) % Add binaries and data folders
+
 modelChoose = 4; % choose model 3D - 3, 4D with 2D measurement - 4
 
 load('data.mat') % map of terrain
