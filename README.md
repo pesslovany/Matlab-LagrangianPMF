@@ -6,7 +6,7 @@ __If you are using this code for a publication, please cite the paper.__
 
 The parameters of the filters and models used (where UKF can be switched off) are in the file initModel.m. 
 
-The code is run from the main.m. Matlab data data_UKFdivergence_3D and data_UKFdivergence_4D can be loaded from the main.m file lines 39/40, they showcase data for which UKF fails. There are two mex files, they should be compiled and ready to use with windows, intel mac and silicone mac. If there is an issue with these files, please comment out the parts that call them and change the lines for the commented out parts that does not need them. That is
+The code is run from the main.m. Matlab data data_UKFdivergence_3D and data_UKFdivergence_4D can be loaded from the main.m file lines 39/40, they showcase data for which UKF fails. There are two mex files, they should be compiled and ready to use with windows, linux, intel mac and silicone mac. If there is an issue with these files, please comment out the parts that call them and change the lines for the commented out parts that does not need them. That is
 
 For binarySearch: 
 ```
