@@ -21,7 +21,8 @@ switch modelChoose
         % PMF parameters
         model.Npa = [71 71 21]; % number of points per axis
         model.N = prod(model.Npa); % number of points - total
-        model.noPart = 200000; % number of particles for PF
+        model.noPart = 250000; % number of particles for multinomial resampling PF
+        model.essThrd = (2/3)*model.noPart; % effective sample size threshold for PF
         model.sFactor = 5; % scaling factor (number of sigmas covered by the grid)
         model.meanV = 0; % Mean values of components of meas noise
         model.wV = 1; % weights
@@ -40,7 +41,6 @@ switch modelChoose
         model.z(1,:) = hB; % add real measurements
         model.V.pdf = gmdistribution(model.meanV',repmat(model.R,1,1,1),model.wV); % Meas noise pdf
         % UKF Params
-        model.ukfOn = 1; % 0 - disabled, 1 - enabled
         model.kappa = 1;
         model.SPnum = 2*model.nx+1;
     case 4 % 4D
@@ -60,7 +60,8 @@ switch modelChoose
         model.Npa = [51 51 41 41]; % number of points per axis
         model.N = prod(model.Npa); % number of points - total
         model.noPart = floor(1.8*model.N); % number of particles for PF
-        model.sFactor = 6; % scaling factor (number of sigmas covered by the grid)
+        model.sFactor = 5; % scaling factor (number of sigmas covered by the grid)
+        model.essThrd = (2/3)*model.noPart; % effective sample size threshold for PF
         model.meanV = [0; 0; 0]; % Mean values of components of meas noise
         model.wV = 1; % weights
         model.V.pdf = gmdistribution(model.meanV',repmat(model.R,1,1,1),model.wV); % Meas noise pdf
@@ -82,7 +83,6 @@ switch modelChoose
         model.z(1,:) = hB; % add real data as measurement
         model.z(2:3,:) = model.z(2:3,:)+chol(model.R(2:3,2:3))*randn(size(model.z(2:3,:)));
         % UKF Params
-        model.ukfOn = 1; % 0 - disabled, 1 - enabled
         model.kappa = 1;
         model.SPnum = 2*model.nx+1;
     otherwise
