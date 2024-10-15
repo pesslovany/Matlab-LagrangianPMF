@@ -14,7 +14,7 @@ format shortG
 cd ..
 addpath(genpath(pwd)) % Add binaries and data folders
 
-modelChoose = 4; % choose model 3D - 3, 4D with 2D measurement - 4
+modelChoose = 3; % choose model 3D - 3, 4D with 2D measurement - 4
 
 load('data.mat') % map of terrain
 % Map interpolant for measurement
@@ -63,13 +63,6 @@ for mc = 1:1:MC
     halfGrid = ceil(N/2); % Middle row of the TPM matrix index
 
     effectiveSampleSize = 0;
-
-    % tic
-    % [matSys,matVarSys] = particleFilterEstimationSys(modelChoose, souradniceGNSS, hB, vysky);
-    % tocMatSys(mc) = toc;
-    % tic
-    % [matMult,matVarMult] = particleFilterEstimationMult(modelChoose, souradniceGNSS, hB, vysky);
-    % tocMatMult(mc) = toc;
 
     for k = 1:1:endTime-1
         disp(['Step:', num2str(k),'/',num2str(endTime-1)])
@@ -226,7 +219,7 @@ for mc = 1:1:MC
         noPartPrior = floor(0.8*noPart);
         noPartGrid = floor(0.2*noPart);
 
-        alpha = 1.5;
+        alpha = sFactor;
 
         gridRand = (alpha * sqrt(filtVarPFCor(:,k))) .* rand(nx,noPartGrid);
 
@@ -288,13 +281,6 @@ for mc = 1:1:MC
 
     end
 
-    % Evaluation for System
-    % [rmseMatSys(:, mc), astdMatSys11(mc), astdMatSys22(mc), astdMatSys33(mc), annes_MatSysout(mc)] = ...
-    %     evaluateFilter(x, matSys, matVarSys, 'Sys', k); %#ok<*SAGROW>
-
-    % % Evaluation for Mult
-    % [rmseMatMult(:, mc), astdMatMult11(mc), astdMatMult22(mc), astdMatMult33(mc), annes_MatMultout(mc)] = ...
-    %     evaluateFilter(x, matMult, matVarMult, 'Mult', k);
 
     % Evaluation for PMF
     [rmsePMF(:, mc), astdPMF11(mc), astdPMF22(mc), astdPMF33(mc), annes_PMFout(mc)] = ...
@@ -330,9 +316,7 @@ for mc = 1:1:MC
 
 end
 
-% % Normalize outputs for System and Mult (commented out)
-% annes_MatSysout = annes_MatSysout / (nx * k);
-% annes_MatMultout = annes_MatMultout / (nx * k);
+% Normalize outputs for System and Mult 
 annes_PMFout = annes_PMFout / (nx * k);
 annes_PFout = annes_PFout / (nx * k);
 annes_PFoutsys = annes_PFoutsys / (nx * k);
@@ -350,23 +334,17 @@ tocPFavgOut = mean(tocPFavg, 2);
 tocPFavgSTDOut = mean(tocPFavgSTD, 2);
 tocPFavgsysOut = mean(tocPFavgsys, 2);
 tocUKFavgOut = mean(tocUKFavg, 2);
-% tocMatavgSysOut = mean(tocMatSys/(endTime-1), 2); % Commented out
-% tocMatavgMultOut = mean(tocMatMult/(endTime-1), 2); % Commented out
+
 tocPFavgCorOut = mean(tocPFavgCor, 2);
 
-% % Normalize outputs for System and Mult (commented out)
-% annes_MatSysout = annes_MatSysout / (nx * k);
-% annes_MatMultout = annes_MatMultout / (nx * k);
+% Normalize outputs for System and Mult 
 annes_PFCorout = annes_PFoutCor / (nx * k);
 
-% % Mean RMSE calculations for System and Mult (commented out)
-% rmseMatSysout = mean(rmseMatSys, 2);
-% rmseMatMultout = mean(rmseMatMult, 2);
+% Mean RMSE calculations for System and Mult 
 rmsePFCorout = mean(rmsePFCor, 2);  % Add PF Cor RMSE calculation
 
-% % Mean standard deviations for System and Mult (commented out)
-% astdMatSys = [mean(astdMatSys11), mean(astdMatSys22)];
-% astdMatMult = [mean(astdMatMult11), mean(astdMatMult22)];
+% Mean standard deviations for System and Mult 
+
 astdPFCor = [mean(astdPF11Cor), mean(astdPF22Cor)];  % Add PF Cor standard deviations
 
 meanTIME = [mean(tocPFavgCorOut), mean(tocPMFavgOut), mean(tocPFavgOut), ...
