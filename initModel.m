@@ -60,7 +60,7 @@ switch modelChoose
         model.Npa = [51 51 41 41]; % number of points per axis
         model.N = prod(model.Npa); % number of points - total
         model.noPart = floor(1.8*model.N); % number of particles for PF
-        model.sFactor = 6; % scaling factor (number of sigmas covered by the grid)
+        model.sFactor = 5; % scaling factor (number of sigmas covered by the grid)
         model.essThrd = (2/3)*model.noPart; % effective sample size threshold for PF
         model.meanV = [0; 0; 0]; % Mean values of components of meas noise
         model.wV = 1; % weights
