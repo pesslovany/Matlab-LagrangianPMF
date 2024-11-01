@@ -2,7 +2,7 @@
 
 This repository implements Lagrangian grid based filter for Terrain aided navigation, and compares it with other state of the art filters. The filters are used for position estimation of a vehicle based on a real world barometric measurements. The code is meant to complement a 
 
-publication: 10.1109/MSP.2024.3489969. 
+__publication: 10.1109/MSP.2024.3489969__. 
 
 For more information please read the paper. 
 
