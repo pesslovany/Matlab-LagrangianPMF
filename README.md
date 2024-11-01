@@ -1,6 +1,10 @@
 # Matlab-LagrangianPMF
 
-This repository implements Lagrangian grid based filter for Terrain aided navigation, and compares it with other state of the art filters. The filters are used for position estimation of a vehicle based on a real world barometric measurements. The code is meant to complement a publication: TBD DOI. For more information please read the paper. 
+This repository implements Lagrangian grid based filter for Terrain aided navigation, and compares it with other state of the art filters. The filters are used for position estimation of a vehicle based on a real world barometric measurements. The code is meant to complement a 
+
+publication: 10.1109/MSP.2024.3489969. 
+
+For more information please read the paper. 
 
 __If you are using this code for a publication, please cite the paper.__
 
