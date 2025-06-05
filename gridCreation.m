@@ -1,4 +1,4 @@
-function [gridOut, gridStep, gridCoordPerDim, meanIn, eigVect] = gridCreation(meanIn,covIn,sFactor,nx,Npa)
+function [gridOut, gridStep, gridCoordPerDim, meanIn, eigVect, gridBound] = gridCreation(meanIn,covIn,sFactor,nx,Npa)
 %gridCreation creates a grid based on first two moments
 % INPUTS:
 % meanIn - center of the grid

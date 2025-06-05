@@ -1,8 +1,8 @@
 %%
-%   Lagrangian based grid-based filter for real TAN data.
+%   Lagrangian based grid-based filter for real TAN dataset.
 %   authors: Jakub Matousek, pesslovany@gmail.com
 %            Jindrich Dunik, dunikj@kky.zcu.cz, University of West Bohemia
-% See paper: 10.1109/MSP.2024.3489969.
+% See paper: 10.1109/MSP.2024.3489969 (In queue for publication in IEEE Sig Pro mag)
 
 %% Parameters and system simulation
 clc
