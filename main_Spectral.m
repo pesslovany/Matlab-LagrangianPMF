@@ -11,7 +11,7 @@ format shortG
 
 addpath(genpath(pwd)); % Add all files and subfolders in the current (one level up) directory
 
-modelChoose = 3; % choose model 3D - 3, 4D with - 4
+modelChoose = 4; % choose model 3D - 3, 4D with - 4
 
 load('data.mat') % map of terrain
 % Map interpolant for measurement
@@ -21,8 +21,9 @@ timeSteps = 1:1:length(souradniceGNSS);
 % Last time
 endTime = length(timeSteps);
 
+
 % Number of Monte Carlo simulations
-MC = 1;
+MC = 50;
 for mc = 1:1:MC
 
     model = initModel(modelChoose, souradniceGNSS, hB, vysky);
@@ -71,7 +72,6 @@ for mc = 1:1:MC
         Ppold = F*(eigVect);
         % Time Update
         [predDensityProb,predGrid,predGridDelta] = gbfTimeUpdateFFT(F,measPdf,measGridNew,GridDelta,k,Npa,invQ,predDenDenomW,nx,u(:,k));
-        % predDensityProb(predDensityProb<0)=0;
         tocPMF(k) = toc; % Time evaluation
 
         %% Grid-based Filter - cont
@@ -90,9 +90,9 @@ for mc = 1:1:MC
         gridDim = gridDimOld2;
         predVarPom = F*measVar3(:,:,k)*F' + Q;
         xOld2 = F*measMean3(:,k) + u(:,k);
-        [predGridAdvect,  GridDelta2(:,k), gridDimOld2, ~, Ppold2, gridBound] = gridCreation(xOld2,predVarPom,sFactor,nx,Npa); % create the grid to interp on
+        [predGridAdvect,  GridDelta2(:,k+1), gridDimOld2, ~, Ppold2, gridBound] = gridCreation(xOld2,predVarPom,sFactor,nx,Npa); % create the grid to interp on
         measGridNew2 = inv(F)*(predGridAdvect - u(:,k));
-        gridStepNew = inv(F)* GridDelta2(:,k);
+        GridDelta2(:,k) = inv(F)* GridDelta2(:,k+1);
 
         % Interpolation
         Fint = griddedInterpolant(gridDim,reshape(measPdf2,Npa),"linear","none"); % interpolant
@@ -102,7 +102,15 @@ for mc = 1:1:MC
 
         rotQ = Ppold2'*Q*Ppold2;
         % Time Update
-        [predDensityProb2,predGrid2,predGridDelta2] = gbfTimeUpdateSpect(F,measPdf2,measGridNew2,GridDelta2,k,Npa,rotQ,u(:,k),dtSpec,gridBound,gridStepNew);
+        [predDensityProb2,predGrid2,predGridDelta2] = gbfTimeUpdateSpect(F,measPdf2,measGridNew2,GridDelta2,k,Npa,rotQ,u(:,k),dtSpec,gridBound);
+        % If something unexpected happend switch to discrete diffusion for
+        % one step as it is more stable
+        if abs(min(predDensityProb2)) > max(predDensityProb2)/100
+            [predDensityProb2,predGrid2,predGridDelta2] = gbfTimeUpdateFFT(F,measPdf2,measGridNew2,GridDelta2,k,Npa,invQ,predDenDenomW,nx,u(:,k));
+        end
+        predDensityProb(predDensityProb<0)=0;
+        predDensityProb2 = predDensityProb2./(sum(predDensityProb2)*prod(GridDelta2(:,k+1)))'; % Normalizaton (theoretically not needed)
+
         tocPMF2(k) = toc; % Time evaluation
 
     end
@@ -153,4 +161,7 @@ T2 = table([ rmsePMFout(1) rmsePMFout2(1)]',...
     'VariableNames',{'RMSE x1','RMSE x2','RMSE x3','ASTD 1','ASTD 2','ASTD 3','ANNES','TIME'},'RowName',...
     {'LGbF','Spect LGbF'}) %#ok<NOPTS>
 
-
+plot(x(1,:),x(2,:))
+hold on
+plot(measMean2(1,:),measMean2(2,:))
+plot(measMean3(1,:),measMean3(2,:))

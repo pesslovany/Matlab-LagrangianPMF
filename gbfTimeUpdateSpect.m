@@ -1,10 +1,8 @@
-function [predDensityProb,predGrid,GridDelta] = gbfTimeUpdateSpect(F,measPdf,measGridNew,GridDelta,k,Npa,Q,u,dtSpec,gridDimOld,GridDeltaIn)
+function [predDensityProb,predGrid,GridDelta] = gbfTimeUpdateSpect(F,measPdf,measGridNew,GridDelta,k,Npa,Q,u,dtSpec,gridDimOld)
 % LGbF time update for the spectral method
 
 % Pred Grid
 predGrid = F*measGridNew + u; % Predictive grid
-GridDelta(:,k+1) = GridDeltaIn; % Grid step size
-
 
 % ULTRA FAST PMF
 filtDenDOTprodDeltas = (measPdf*prod(GridDelta(:,k))); % measurement PDF * measurement PDF step size
@@ -14,7 +12,7 @@ filtDenDOTprodDeltasCub = setEdgesToZeros(filtDenDOTprodDeltasCub);
 
 dims = numel(gridDimOld);
 
-L = 2*gridDimOld; % Grid size
+L = 2*gridDimOld + GridDelta(:,k+1); % Grid size
 
 kInd = cell(1, dims);
 gridSize = zeros(1, dims);
@@ -56,7 +54,6 @@ u = (coeficienty).*u;
 predDensityProb2cub = real(ifftn(u)); % realna cast
 
 predDensityProb = reshape(predDensityProb2cub,length(predGrid),1); % back to computational space
-predDensityProb = predDensityProb./(sum(predDensityProb)*prod(GridDelta(:,k+1)))'; % Normalizaton (theoretically not needed)
 
 end
 
