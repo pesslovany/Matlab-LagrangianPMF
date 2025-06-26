@@ -29,7 +29,7 @@ coeficienty = zeros(gridSize);
 for d = 1:dims
     shape = ones(1, dims);
     shape(d) = gridSize(d);
-    coeficienty = coeficienty + reshape(kInd{d}.^2 * dtSpec * (Q(d, d) / 2), shape);
+    coeficienty = coeficienty + reshape(kInd{d}.^2 * (Q(d, d) / 2), shape);
 end
 
 % Add cross-terms (products of different dimensions)
@@ -39,12 +39,13 @@ for d1 = 1:dims
             shape2 = ones(1, dims);
             shape1(d1) = gridSize(d1);
             shape2(d2) = gridSize(d2);
-            coeficienty = coeficienty + dtSpec*Q(d1,d2)*reshape(kInd{d1}, shape1) ...
+            coeficienty = coeficienty + Q(d1,d2)*reshape(kInd{d1}, shape1) ...
                 .* reshape(kInd{d2}, shape2);
     end
 end
 
-coeficienty = (1 ./(1 + coeficienty)).^(1 / dtSpec);
+% coeficienty = (1 ./(1 + coeficienty)).^(1 / dtSpec);
+coeficienty = exp(-coeficienty);
 
 
 % dims = 1:1:nx;

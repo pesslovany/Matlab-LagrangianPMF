@@ -23,7 +23,7 @@ endTime = length(timeSteps);
 
 
 % Number of Monte Carlo simulations
-MC = 50;
+MC = 1;
 for mc = 1:1:MC
 
     model = initModel(modelChoose, souradniceGNSS, hB, vysky);
@@ -100,6 +100,8 @@ for mc = 1:1:MC
         measPdf2 = Fint(inerpOn'); % Interpolation
         measPdf2(isnan(measPdf2)) = 0; % Zeros for extrapolation, otherwise artifacts would appear
 
+        % Rotation of Q needed so derivataives can be calculated in the grid
+        % space
         rotQ = Ppold2'*Q*Ppold2;
         % Time Update
         [predDensityProb2,predGrid2,predGridDelta2] = gbfTimeUpdateSpect(F,measPdf2,measGridNew2,GridDelta2,k,Npa,rotQ,u(:,k),dtSpec,gridBound);
@@ -108,7 +110,7 @@ for mc = 1:1:MC
         if abs(min(predDensityProb2)) > max(predDensityProb2)/100
             [predDensityProb2,predGrid2,predGridDelta2] = gbfTimeUpdateFFT(F,measPdf2,measGridNew2,GridDelta2,k,Npa,invQ,predDenDenomW,nx,u(:,k));
         end
-        predDensityProb(predDensityProb<0)=0;
+        predDensityProb2(predDensityProb2<0)=0;
         predDensityProb2 = predDensityProb2./(sum(predDensityProb2)*prod(GridDelta2(:,k+1)))'; % Normalizaton (theoretically not needed)
 
         tocPMF2(k) = toc; % Time evaluation
@@ -142,8 +144,8 @@ for mc = 1:1:MC
 end
 
 
-annes_PMFout = sum(annes_PMFout)/(nx*mc*(k+1));
-annes_PMFout2 = sum(annes_PMFout2)/(nx*mc*(k+1));
+annes_PMFoutPom = sum(annes_PMFout)/(nx*mc*(k+1));
+annes_PMFout2Pom = sum(annes_PMFout2)/(nx*mc*(k+1));
 
 rmsePMFout = mean(rmsePMF,2);
 rmsePMFout2 = mean(rmsePMF2,2);
@@ -156,7 +158,7 @@ T2 = table([ rmsePMFout(1) rmsePMFout2(1)]',...
     [ mean(astdPMF11) mean(astdPMF211)]',...
     [ mean(astdPMF22) mean(astdPMF222)]',...
     [ mean(astdPMF33) mean(astdPMF233)]',...
-    [ mean(annes_PMFout) mean(annes_PMFout2)]',...
+    [ mean(annes_PMFoutPom) mean(annes_PMFout2Pom)]',...
     [ mean(tocPMFavgOut) mean(tocPMFavg2out)]',...
     'VariableNames',{'RMSE x1','RMSE x2','RMSE x3','ASTD 1','ASTD 2','ASTD 3','ANNES','TIME'},'RowName',...
     {'LGbF','Spect LGbF'}) %#ok<NOPTS>
