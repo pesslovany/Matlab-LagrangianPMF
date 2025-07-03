@@ -1,4 +1,4 @@
-function [predDensityProb,predGrid,GridDelta] = gbfTimeUpdateSpect(F,measPdf,measGridNew,GridDelta,k,Npa,Q,u,dtSpec,gridDimOld)
+function [predDensityProb,predGrid,GridDelta] = gbfTimeUpdateSpect(F,measPdf,measGridNew,GridDelta,k,Npa,Q,u,gridDimOld)
 % LGbF time update for the spectral method
 
 % Pred Grid

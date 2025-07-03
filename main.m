@@ -1,97 +1,149 @@
-%%
-%   Lagrangian based grid-based filter for real TAN dataset.
-%   authors: Jakub Matousek, pesslovany@gmail.com
-%            Jindrich Dunik, dunikj@kky.zcu.cz, University of West Bohemia
-% See paper: 10.1109/MSP.2024.3489969 (In queue for publication in IEEE Sig Pro mag)
+%% Lagrangian Grid-Based Filter (LGbF) Setup
+%   FFT and spectral differentiation based filters for real TAN dataset
+%   author: pesslovany@gmail.com
 
-%% Parameters and system simulation
 clc
 clear variables
 close all
 format shortG
 
-addpath(genpath(pwd)); % Add all files and subfolders in the current (one level up) directory
+addpath(genpath(pwd)); % Add all files and subfolders in the current directory
 
-modelChoose = 3; % choose model 3D - 3, 4D with 2D measurement - 4
+% Select Filters to Run
+runFlags.LGF_Standard = true;     % classic LGbF
+runFlags.LGbF_Spectral = true;     % spectral LGbF
+
+% Parameters and system simulation
+modelChoose = 4; % choose model: 3D = 3, 4D = 4
 
 load('data.mat') % map of terrain
-% Map interpolant for measurement
 vysky = griddedInterpolant(souradniceX',souradniceY',souradniceZ',"linear","none");
-% Time steps
-timeSteps = 1:1:length(souradniceGNSS);
-% Last time
-endTime = length(timeSteps);
 
-% Number of Monte Carlo simulations
+timeSteps = 1:1:length(souradniceGNSS);
+endTime = length(timeSteps);
 MC = 1;
 
-% For cycle over Monte Carlo simulations
 for mc = 1:1:MC
-
     model = initModel(modelChoose, souradniceGNSS, hB, vysky);
-
-    % Unpack model structure variables
     fields = fieldnames(model);
     for i = 1:numel(fields)
         eval([fields{i} ' = model.' fields{i} ';']);
     end
-
     clear model
-    
-    % PMF init and param
-    % Initial grid
-    [predGrid, predGridDelta, gridDimOld, gridCenter, gridRotation] = gridCreation(meanX0,varX0,sFactor,nx,Npa);
-    % Initial PMD
-    pom = (predGrid-meanX0);
-    denominator = sqrt((2*pi)^nx*det(varX0));
-    predPdf = ((exp(sum(-0.5*pom'/(varX0).*pom',2)))/denominator); % Initial Gaussian Point mass density (PMD)
-    % Auxiliary variables
-    predDenDenomW = sqrt((2*pi)^nx*det(Q)); % Denominator for convolution in predictive step
-    halfGrid = ceil(N/2); % Middle row of the TPM matrix index
-    
-    for k = 1:1:endTime-1
-        disp(['Step:', num2str(k),'/',num2str(endTime-1)])
 
-        % Grid-based Filter
-        tic
-        % Measurement update
-        [filtPdf] = gbfMeasUpdate(predGrid,nz,k,z(:,k),V,predPdf,predGridDelta(:,k),hfunct); % Measurement update           
-        % Filtering mean and var
-        filtMeanPMF(:,k) = predGrid*filtPdf*prod(predGridDelta(:,k)); % Measurement update mean
-        chip_ = (predGrid-filtMeanPMF(:,k));
-        chip_w = chip_.*repmat(filtPdf',nx,1);
-        filtVarPMF(:,:,k) = chip_w*chip_' * prod(predGridDelta(:,k)); % Measurement update variance
-        filtGrid = predGrid;
-        % Meas PDF interp
-        [filtPdf,gridDimOld, GridDelta(:,k), measGridNew, eigVect] = measPdfInterp(filtPdf,...
-            gridDimOld,gridCenter,gridRotation,Q,sFactor,nx,Npa,filtMeanPMF(:,k),filtVarPMF(:,:,k),F);
-        gridCenter = F*filtMeanPMF(:,k) + u(:,k);
-        gridRotation = F*(eigVect);
-        % Time Update
-        [predPdf,predGrid,predGridDelta] = gbfTimeUpdateFFT(F,filtPdf,measGridNew,GridDelta,k,Npa,invQ,predDenDenomW,nx,u(:,k));
-        tocPMF(k) = toc; % Time evaluation
+    sFactor = 6;
 
-        endtime_act = k;
+    [predGrid, predGridDelta, gridDimOld, xOld, Ppold, ~] = gridCreation(meanX0,varX0,sFactor,nx,Npa);
+    [predGrid2, predGridDelta2, gridDimOld2, xOld2, Ppold2, ~] = gridCreation(meanX0,varX0,sFactor,nx,Npa);
+
+    pom = (predGrid - meanX0);
+    denominator = sqrt((2*pi)^nx * det(varX0));
+    predDensityProb  = exp(sum(-0.5 * pom'/(varX0) .* pom',2)) / denominator;
+    predDensityProb2 = predDensityProb;
+    predPdf3         = predDensityProb;
+
+    predDenDenomW = sqrt((2*pi)^nx * det(Q));
+    halfGrid = ceil(N/2);
+    GridDelta2 = [];
+    GridDelta = [];
+
+
+    for k = 1:endTime-1
+        disp(['Step:', num2str(k), '/', num2str(endTime-1)])
+
+        %% Standard GBF
+        if runFlags.LGF_Standard
+            tic
+            [measPdf] = gbfMeasUpdate(predGrid,nz,k,z(:,k),V,predDensityProb,predGridDelta(:,k),hfunct);
+            [measMean2(:,k), measVar2(:,:,k)] = momentGbF(predGrid, measPdf, predGridDelta(:,k));
+            measGrid = predGrid;
+
+            [measPdf,gridDimOld, GridDelta(:,k), measGridNew, eigVect] = measPdfInterp(measPdf, ...
+                gridDimOld,xOld,Ppold,Q,sFactor,nx,Npa,measMean2(:,k),measVar2(:,:,k),F);
+            xOld = F * measMean2(:,k) + u(:,k);
+            Ppold = F * eigVect;
+            [predDensityProb,predGrid,predGridDelta] = gbfTimeUpdateFFT(F,measPdf,measGridNew,GridDelta,k,Npa,invQ,predDenDenomW,nx,u(:,k));
+
+            tocPMF(k) = toc;
+        end
+
+        %% Spectral GBF
+        if runFlags.LGbF_Spectral
+            tic
+            [measPdf2] = gbfMeasUpdate(predGrid2,nz,k,z(:,k),V,predDensityProb2,predGridDelta2(:,k),hfunct);
+            [measMean3(:,k), measVar3(:,:,k)] = momentGbF(predGrid2, measPdf2, predGridDelta2(:,k));
+            measGrid2 = predGrid2;
+
+            gridCenter = xOld2;
+            gridRotation = Ppold2;
+            gridDim = gridDimOld2;
+
+            [measPdf2, GridDelta2, xOld2, predGridAdvect, gridDimOld2, ...
+                Ppold2, gridBound, measGridNew2, predVarPom] = ...
+                measPdfInterpSpect(measPdf2, GridDelta2, measMean3, measVar3, ...
+                k, u, F, Q, sFactor, nx, Npa, ...
+                gridDim, gridRotation, gridCenter);
+
+            rotQ = Ppold2' * Q * Ppold2;
+            [predDensityProb2,predGrid2,predGridDelta2] = gbfTimeUpdateSpect(F,measPdf2,measGridNew2,GridDelta2,k,Npa,rotQ,u(:,k),gridBound);
+            if abs(min(predDensityProb2)) > max(predDensityProb2)/100
+                [predDensityProb2,predGrid2,predGridDelta2] = gbfTimeUpdateFFT(F,measPdf2,measGridNew2,GridDelta2,k,Npa,invQ,predDenDenomW,nx,u(:,k));
+            end
+            predDensityProb2(predDensityProb2 < 0) = 0;
+            predDensityProb2 = predDensityProb2 / (sum(predDensityProb2)*prod(GridDelta2(:,k+1)))';
+            tocPMF2(k) = toc;
+        end
 
     end
 
-    % Evaluation data preparation
-    rmsePMF(:,mc) = sqrt(mean((x(:,1:k-1)-filtMeanPMF(:,1:k-1)).^2,2)); %#ok<*SAGROW>
-    astdPMF11(mc) = sqrt(mean(filtVarPMF(1,1,1:k-1)));
-    astdPMF22(mc) = sqrt(mean(filtVarPMF(2,2,1:k-1)));
-    astdPMF33(mc) = sqrt(mean(filtVarPMF(3,3,1:k-1)));
-    annes_PMF = 0;
-    for indAn = 1:1:k-1
-        annes_PMF = annes_PMF + ((x(:,indAn)-filtMeanPMF(:,indAn)).*(1./(diag(filtVarPMF(:,:,indAn)))))'*(x(:,indAn)-filtMeanPMF(:,indAn));
+    % Evaluation
+    if runFlags.LGF_Standard
+        [rmsePMF(:,mc), astdPMF(:,mc), annesPMF(mc)] = calcRes(x, measMean2, measVar2, k); %#ok<*SAGROW>
+        tocPMFavg(mc) = mean(tocPMF);
     end
-    annes_PMFout(mc) = annes_PMF;
-
-    tocPMFavg(:,mc) = mean(tocPMF);
-
+    if runFlags.LGbF_Spectral
+        [rmsePMF2(:,mc), astdPMF2(:,mc), annesPMF2(mc)] = calcRes(x, measMean3, measVar3, k);
+        tocPMF2avg(mc) = mean(tocPMF2);
+    end
 end
 
-% Normalize outputs
-annes_PMFout = annes_PMFout / (nx * k);
-rmsePMFout = mean(rmsePMF, 2);
-tocPMFavgOut = mean(tocPMFavg, 2);
+% Post-Processed Statistics
+if runFlags.LGF_Standard
+    annes_PMFoutPom  = sum(annesPMF)  / (nx * mc * (k + 1));
+    rmsePMFout       = mean(rmsePMF , 2);
+    astdPMFout       = mean(astdPMF , 2);
+    tocPMFavgOut     = mean(tocPMFavg);
+end
+if runFlags.LGbF_Spectral
+    annes_PMFout2Pom = sum(annesPMF2) / (nx * mc * (k + 1));
+    rmsePMFout2      = mean(rmsePMF2, 2);
+    astdPMFout2      = mean(astdPMF2, 2);
+    tocPMFavg2out    = mean(tocPMF2avg);
+end
 
+% Final Results Table
+rowNames = {};
+vals = {};
+if runFlags.LGF_Standard
+    rowNames{end+1} = 'LGbF';
+    vals{end+1} = [rmsePMFout(1), rmsePMFout(2), rmsePMFout(3), ...
+        astdPMFout(1), astdPMFout(2), astdPMFout(3), ...
+        annes_PMFoutPom, tocPMFavgOut];
+end
+if runFlags.LGbF_Spectral
+    rowNames{end+1} = 'Spect LGbF';
+    vals{end+1} = [rmsePMFout2(1), rmsePMFout2(2), rmsePMFout2(3), ...
+        astdPMFout2(1), astdPMFout2(2), astdPMFout2(3), ...
+        annes_PMFout2Pom, tocPMFavg2out];
+end
+
+T2 = cell2mat(vals');
+T2 = array2table(T2, ...
+    'VariableNames', {'RMSE_x1','RMSE_x2','RMSE_x3','ASTD_1','ASTD_2','ASTD_3','ANNES','TIME'}, ...
+    'RowNames', rowNames);
+
+disp(T2)
+
+% Trajectory Plots
+if runFlags.LGF_Standard, plot(x(1,:),x(2,:)); hold on; plot(measMean2(1,:),measMean2(2,:)); end
+if runFlags.LGbF_Spectral, plot(measMean3(1,:),measMean3(2,:)); end
