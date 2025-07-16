@@ -12,9 +12,10 @@ addpath(genpath(pwd)); % Add all files and subfolders in the current directory
 % Select Filters to Run
 runFlags.LGF_Standard = true;     % classic LGbF
 runFlags.LGbF_Spectral = true;     % spectral LGbF
+runFlags.RBPF = true;           % Rao-Blackewellized Particle Filter
 
 % Parameters and system simulation
-modelChoose = 4; % choose model: 3D = 3, 4D = 4
+modelChoose = 3; % choose model: 3D = 3, 4D = 4
 
 load('data.mat') % map of terrain
 vysky = griddedInterpolant(souradniceX',souradniceY',souradniceZ',"linear","none");
@@ -47,6 +48,10 @@ for mc = 1:1:MC
     GridDelta2 = [];
     GridDelta = [];
 
+    predW = 1/noPartRbpf*ones(noPartRbpf,1);
+    predXn = meanX0(xnid) + chol(varX0(xnid,xnid),'lower')*randn(nxn, noPartRbpf); % assumes that the initial nonlinear and linear states are independent
+    predXl = repmat(meanX0(xlid), 1, noPartRbpf);
+    predPl = repmat(varX0(xlid,xlid), 1, 1, noPartRbpf);
 
     for k = 1:endTime-1
         disp(['Step:', num2str(k), '/', num2str(endTime-1)])
@@ -93,6 +98,15 @@ for mc = 1:1:MC
             predDensityProb2 = predDensityProb2 / (sum(predDensityProb2)*prod(GridDelta2(:,k+1)))';
             tocPMF2(k) = toc;
         end
+        %% RBPF
+        if runFlags.RBPF
+            tic
+            [measXn, measXl, measPl, measW] = rbpfMeasUpdate(predXn, predXl, predPl, predW, nx, nxl, nz, xnid, xlid, k, z(:,k), R, hfunct, hJacobLfunct, essThrdRbpf);
+            [measMean4(:,k), measVar4(:,:,k)] = momentRBPF(measXn, measXl, measPl, measW, nxn, nxl, xnid, xlid);
+
+            [predXn, predXl, predPl, predW] = rbpfTimeUpdate(measXn, measXl, measPl, measW, F, Q, u(:,k), nxn, nxl, xnid, xlid);
+            tocRBPF(k) = toc;
+        end
 
     end
 
@@ -104,6 +118,10 @@ for mc = 1:1:MC
     if runFlags.LGbF_Spectral
         [rmsePMF2(:,mc), astdPMF2(:,mc), annesPMF2(mc)] = calcRes(x, measMean3, measVar3, k);
         tocPMF2avg(mc) = mean(tocPMF2);
+    end
+    if runFlags.RBPF
+        [rmseRBPF(:,mc), astdRBPF(:,mc), annesRBPF(mc)] = calcRes(x, measMean4, measVar4, k);
+        tocRBPFavg(mc) = mean(tocRBPF);
     end
 end
 
@@ -119,6 +137,12 @@ if runFlags.LGbF_Spectral
     rmsePMFout2      = mean(rmsePMF2, 2);
     astdPMFout2      = mean(astdPMF2, 2);
     tocPMFavg2out    = mean(tocPMF2avg);
+end
+if runFlags.RBPF
+    annes_RBPFoutPom = sum(annesRBPF) / (nx * mc * (k + 1));
+    rmseRBPFout      = mean(rmseRBPF, 2);
+    astdRBPFout      = mean(astdRBPF, 2);
+    tocRBPFavgout    = mean(tocRBPFavg);
 end
 
 % Final Results Table
@@ -136,6 +160,12 @@ if runFlags.LGbF_Spectral
         astdPMFout2(1), astdPMFout2(2), astdPMFout2(3), ...
         annes_PMFout2Pom, tocPMFavg2out];
 end
+if runFlags.RBPF
+    rowNames{end+1} = 'RBPF';
+    vals{end+1} = [rmseRBPFout(1), rmseRBPFout(2), rmseRBPFout(3), ...
+        astdRBPFout(1), astdRBPFout(2), astdRBPFout(3), ...
+        annes_RBPFoutPom, tocRBPFavgout];
+end
 
 T2 = cell2mat(vals');
 T2 = array2table(T2, ...
@@ -147,3 +177,4 @@ disp(T2)
 % Trajectory Plots
 if runFlags.LGF_Standard, plot(x(1,:),x(2,:)); hold on; plot(measMean2(1,:),measMean2(2,:)); end
 if runFlags.LGbF_Spectral, plot(measMean3(1,:),measMean3(2,:)); end
+if runFlags.RBPF, plot(measMean4(1,:),measMean4(2,:)); end

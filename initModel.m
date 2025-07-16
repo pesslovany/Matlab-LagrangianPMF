@@ -43,6 +43,15 @@ switch modelChoose
         % UKF Params
         model.kappa = 1;
         model.SPnum = 2*model.nx+1;
+        % RPBF Params
+        model.xnid = [1, 2]; % indices for nonlinear states (RBPF)
+        model.xlid = [3]; % indices for linear states (RBPF)
+        model.nxn = length(model.xnid);
+        model.nxl = length(model.xlid);
+        model.hJacobLfunct = @(x) 1; % Jacobian matrix of the observation model for the linear state (RBPF)
+        model.noPartRbpf = 2000;    % number of particles for RBPF
+        model.essThrdRbpf = (2/3)*model.noPart; % effective sample size threshold for RBPF
+
     case 4 % 4D
         model.nx = 4; % state dimension
         model.nz = 3; % measurement dimension
@@ -85,6 +94,16 @@ switch modelChoose
         % UKF Params
         model.kappa = 1;
         model.SPnum = 2*model.nx+1;
+        % RPBF Params
+        model.xnid = [1, 2]; % indices for nonlinear states (RBPF)
+        model.xlid = [3, 4]; % indices for linear states (RBPF)
+        model.nxn = length(model.xnid);
+        model.nxl = length(model.xlid);
+        model.hJacobLfunct = @(x) [0, 0;
+                                   (x(3)^3 + 3*x(3)*x(4)^2)/sqrt((x(3)^2 + x(4)^2)^3), -(3*x(3)^2*x(4) + x(4)^3)/sqrt((x(3)^2 + x(4)^2)^3);
+                                   2*x(4)^3/sqrt((x(3)^2 + x(4)^2)^3),                 2*x(3)^3/sqrt((x(3)^2 + x(4)^2)^3)]; % Jacobian matrix of the observation model for the linear state (RBPF)
+        model.noPartRbpf = 20000;    % number of particles for RBPF
+        model.essThrdRbpf = (2/3)*model.noPart; % effective sample size threshold for RBPF
     otherwise
         disp('Error: unsupported model')
 end
