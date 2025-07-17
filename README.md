@@ -2,27 +2,21 @@
 
 This repository implements Lagrangian grid based filter for Terrain aided navigation, and compares it with other state of the art filters. The filters are used for position estimation of a vehicle based on a real world barometric measurements. The code is meant to complement a 
 
-__publication: 10.1109/MSP.2024.3489969__ about the LGbF (run main.m). (Should be hopefully published soon)
+__publication: 10.1109/MSP.2024.3489969__ about the LGbF. (Will be published in the next issue.)
 
-__publication: TBD__ about the Spectral LGbF (run main_Spectral.m). 
+__publication: TBD__ about the Spectral LGbF. (In review.)
+
+__publication: TBD__ on survey about GbFs. (In review.)
+
+__publication: TBD__ on tensor decompositions for LGbF. (In preparation.)
 
 For more information please read the paper. 
 
-__If you are using this code for a publication, please cite the paper.__
+__If you are using this code for a publication, please cite the papers.__
 
 The parameters of the filters and models used for the publication results are described here and also in the file initModel.m. 
 
-The Lagrangiang grid based filter code is run from the main.m. The comparison with other state of the art filters is in the folder comparison, and can be run by mainComparison.m. There are two mex files, they should be compiled and ready to use with windows, linux, intel mac and silicone mac. If there is an issue with these files, please comment out the parts that call them and change the lines for the commented out parts that does not need them. That is
-
-For binarySearch in mainComparison: 
-```
-% Use this in case the mex file not working
-% for ind = 1:1:noParts
-%     I(ind) = find(cumW >= randomN(ind),1, 'first');
-% end
-I = binarySearch(cumW, randomN, 'first');
-``` 
-For inplaceprod usade by Lagrangian grid based filter:
+The usage of mex file can be swtiched off in gbfTimeUpdateFFT.m:
 ```
 % Use this in case the mex file not working
 % mesPdfDotDeltasTens = mesPdfDotDeltasTens.*convKerTens;
