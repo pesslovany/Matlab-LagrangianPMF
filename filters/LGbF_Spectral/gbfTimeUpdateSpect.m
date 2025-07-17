@@ -44,9 +44,7 @@ for d1 = 1:dims
     end
 end
 
-% coeficienty = (1 ./(1 + coeficienty)).^(1 / dtSpec);
 coeficienty = exp(-coeficienty);
-
 
 % dims = 1:1:nx;
 u = filtDenDOTprodDeltasCub;
