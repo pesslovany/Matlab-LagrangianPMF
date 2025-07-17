@@ -17,7 +17,7 @@ runFlags.PF = true;           % Bootstrap Particle Filter
 runFlags.UKF = true;           % Unscented Kalman Filter
 
 % Parameters and system simulation
-modelChoose = 3; % choose model: 3D = 3, 4D = 4
+modelChoose = 4; % choose model: 3D = 3, 4D = 4
 
 load('data.mat') % map of terrain
 vysky = griddedInterpolant(souradniceX',souradniceY',souradniceZ',"linear","none");
@@ -154,20 +154,26 @@ for mc = 1:1:MC
 
         %% Unscented Kalman filter
         if runFlags.UKF
-            tic;
-            [chi, wm, wc] = msp(xp(:,k), Pp(:,:,k), kappa);
-            dzetap = hfunct(chi, zeros(nz,1), k);
-            zp = dzetap * wm' + meanV;
-            dz = dzetap - zp;
-            Pzp = dz * diag(wc) * dz' + R;
-            dx = chi - xp(:,k);
-            Pxzp = dx * diag(wc) * dz';
-            K = Pxzp / Pzp;
-            e = z(:,k) - zp;
-            xf_ukf(:,k) = xp(:,k) + K*e;
-            Pf_ukf(:,:,k) = Pp(:,:,k) - K*Pzp*K';
-            xp(:,k+1) = F*xf_ukf(:,k) + u(:,k);
-            Pp(:,:,k+1) = F*Pf_ukf(:,:,k)*F' + Q;
+            tic
+            
+            % Meas
+            [X,w] = uPoints(xp,Pp);
+            zTrsf = hfunct(X,0,k);
+            zMean = zTrsf*w';
+            Ydiff = zTrsf-zMean;
+            Pxz = (X-xp).*w*Ydiff';
+            Pzz = Ydiff.*w*Ydiff' + R;
+            dz = z(k)-zMean;
+            measMeanUKF(:,k) = xp+Pxz/Pzz*dz;
+            measVarUKF(:,:,k) = Pp-Pxz/Pzz*Pxz';
+            
+            % Time
+            [X,w] = uPoints(measMeanUKF(:,k),measVarUKF(:,:,k));
+            Y = F*X;
+            xp = Y*w';
+            Ydiff = Y - xp;
+            Pp = Ydiff.*w*Ydiff' + Q;
+
             tocUKF(k) = toc;
         end
 

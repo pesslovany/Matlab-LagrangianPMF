@@ -29,17 +29,17 @@ distPoints = (predGrid(:,halfGridInd)'-(predGrid)'); % Distance of transformed g
 convKer = ((exp(sum(-0.5*distPoints*invQ.*distPoints,2)))/predDenDenomW)';% Convolution kernel values
 convKerTens = reshape(convKer,Npa); % Convolution kernel values in tensor format
 
-dims = 1:1:nx;
-% Will be used to truncate the padding need the do the convolution
-ifun = @(m,n) ceil((n-1)/2)+(1:m);
+dims = 1:nx;
+ifun = @(m,n) ceil((n-1)/2) + (1:m); % Function to compute valid central indices
 subs(1:ndims(mesPdfDotDeltasTens)) = {':'};
-
-for dim=dims % FFT over all dimensions
-    % compute the FFT length with padding
-    l = Npa(dim)+Npa(dim)-1;
-    mesPdfDotDeltasTens = fft(mesPdfDotDeltasTens,l,dim); % FFT measurement pdf
-    convKerTens = fft(convKerTens,l,dim); % FFT of the kernel
-    subs{dim} = ifun(Npa(dim),Npa(dim)); % Padding indices
+% Compute FFT sizes (padded lengths)
+fftSizes = Npa + Npa - 1;
+% Perform forward FFTs
+mesPdfDotDeltasTens = fftn(mesPdfDotDeltasTens, fftSizes);
+convKerTens = fftn(convKerTens, fftSizes);
+% Generate truncation indices
+for dim = dims
+    subs{dim} = ifun(Npa(dim), Npa(dim)); % Truncate to original size after convolution
 end
 
 % Use this in case the mex file not working
@@ -49,9 +49,7 @@ end
 inplaceprod(mesPdfDotDeltasTens, convKerTens);
 
 % IFFT back to space domain
-for dim=dims
-    mesPdfDotDeltasTens = ifft(mesPdfDotDeltasTens,[],dim);
-end
+mesPdfDotDeltasTens = ifftn(mesPdfDotDeltasTens);
 % Make sure the result is real and delete the padding
 predDensityProb2cub = real(mesPdfDotDeltasTens(subs{:}));
 
