@@ -154,6 +154,7 @@ for mc = 1:1:MC
 
         %% Unscented Kalman filter
         if runFlags.UKF
+<<<<<<< Updated upstream
             tic
             % Meas
             [X,w] = uPoints(xp,Pp);
@@ -173,6 +174,24 @@ for mc = 1:1:MC
             Ydiff = Y - xp;
             Pp = Ydiff.*w*Ydiff' + Q';
 
+=======
+            tic;
+            % Meas update
+            [chi, wm, wc] = msp(xp, Pp, kappa);
+            dzetap = hfunct(chi, zeros(nz,1), k);
+            zp = dzetap * wm' + meanV;
+            dz = dzetap - zp;
+            Pzp = dz * diag(wc) * dz' + R;
+            dx = chi - xp;
+            Pxzp = dx * diag(wc) * dz';
+            K = Pxzp / Pzp;
+            e = z(:,k) - zp;
+            measMeanUKF(:,k) = xp + K*e;
+            measVarUKF(:,:,k) = Pp - K*Pzp*K';
+            % Time update
+            xp = F*measMeanUKF(:,k) + u(:,k);
+            Pp = F*measVarUKF(:,:,k)*F' + Q;
+>>>>>>> Stashed changes
             tocUKF(k) = toc;
         end
 
