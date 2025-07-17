@@ -21,7 +21,7 @@ switch modelChoose
         % PMF parameters
         model.Npa = [71 71 21]; % number of points per axis
         model.N = prod(model.Npa); % number of points - total
-        model.noPart = 250000; % number of particles for multinomial resampling PF
+        model.noPart = model.N; % number of particles for multinomial resampling PF
         model.essThrd = (2/3)*model.noPart; % effective sample size threshold for PF
         model.sFactor = 5; % scaling factor (number of sigmas covered by the grid)
         model.meanV = 0; % Mean values of components of meas noise
@@ -68,7 +68,7 @@ switch modelChoose
         % PMF parameters
         model.Npa = [51 51 41 41]; % number of points per axis
         model.N = prod(model.Npa); % number of points - total
-        model.noPart = floor(1.8*model.N); % number of particles for PF
+        model.noPart = model.N;%floor(1.8*model.N); % number of particles for PF
         model.sFactor = 5; % scaling factor (number of sigmas covered by the grid)
         model.essThrd = (2/3)*model.noPart; % effective sample size threshold for PF
         model.meanV = [0; 0; 0]; % Mean values of components of meas noise
