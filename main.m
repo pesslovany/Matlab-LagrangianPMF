@@ -34,8 +34,6 @@ for mc = 1:1:MC
     end
     clear model
 
-    sFactor = 5;
-
     [predGrid, predGridDelta, gridDimOld, xOld, Ppold, ~] = gridCreation(meanX0,varX0,sFactor,nx,Npa);
     [predGrid2, predGridDelta2, gridDimOld2, xOld2, Ppold2, ~] = gridCreation(meanX0,varX0,sFactor,nx,Npa);
 
