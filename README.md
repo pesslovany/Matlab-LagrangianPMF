@@ -6,9 +6,11 @@ __publication: 10.1109/MSP.2024.3489969__ about the LGbF. (Will be published in 
 
 __publication: TBD__ about the Spectral LGbF. (In review.)
 
-__publication: TBD__ on survey about GbFs. (In review.)
+__publication: TBD__ survey about GbFs. (In review.)
 
 __publication: TBD__ on tensor decompositions for LGbF. (In preparation.)
+
+__publication: TBD__ LGbF for nonlinear invertible models. (In preparation.)
 
 For more information please read the paper. 
 
