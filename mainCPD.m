@@ -10,7 +10,7 @@ addpath(genpath(pwd)); % Add all files and subfolders in the current directory
 
 % clc
 clear
-rng(1);
+% rng(1);
 close all
 format shortG
 load('data.mat') % map of terrain
@@ -23,7 +23,7 @@ timeSteps = 1:1:length(souradniceGNSS);
 % Max rank of CPD
 Rdef = 20;
 % MC simulations
-MC = 1;
+MC = 10;
 
 for mc = 1:1:MC
 
@@ -33,6 +33,8 @@ for mc = 1:1:MC
         eval([fields{i} ' = model.' fields{i} ';']);
     end
     clear model
+
+    Q = diag(diag(Q));
     
 
     % PMF init and param
@@ -118,10 +120,9 @@ for mc = 1:1:MC
         % [measPredAdv, measVPredAdv] = momentsCPD(predDensityCPD, gridCPD, predGridDeltaCPD(:,k+1));
 
         % Spectral diffusion
-        % [predDensityProbCPD] = gbfDiffusionCPD_disc(predDensityCPD, Q, predGridDeltaCPD, ...
-        %                                   gridCPD, NpaCPD, nx, k, Rdef);
-        % Discrete diffusion
         [predDensityProbCPD] = gbfDiffusionCPD(predDensityCPD, Q, predGridDeltaCPD, nx, k, Rdef);
+        % Discrete diffusion
+        % [predDensityProbCPD] = gbfDiffusionCPDSpect(predDensityCPD, Q, predGridDeltaCPD, nx, k, Rdef);
 
         tocPMFCPD(k) = toc; % Time evaluation
 

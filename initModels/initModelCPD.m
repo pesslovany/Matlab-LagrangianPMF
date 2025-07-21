@@ -1,7 +1,5 @@
-function model = initModelCPD(modelChoose, souradniceGNSS, hB, vysky)
+function model = initModelCPD(souradniceGNSS, hB, vysky)
 
-switch modelChoose
-    case 1
         % State and measurement dimensions
         model.nx = 4;
         model.nz = 3;
@@ -73,8 +71,7 @@ switch modelChoose
         model.z(1,:) = hB;
         model.z(2:3,:) = model.z(2:3,:) + chol(model.R(2:3,2:3)) * randn(size(model.z(2:3,:)));
 
-        model.NpaCPD = [71 71 51 51];
+        model.NpaCPD = [51 51 41 41];
         model.N = prod(model.Npa);
-end
 
 end
