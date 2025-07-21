@@ -1,5 +1,5 @@
-%% Lagrangian Grid-Based Filter (LGbF) Setup
-%   FFT and spectral differentiation based filters for real TAN dataset
+%% Lagrangian Grid-Based Filter (LGbF) and others 
+%   for real TAN dataset
 %   author: pesslovany@gmail.com
 
 clc

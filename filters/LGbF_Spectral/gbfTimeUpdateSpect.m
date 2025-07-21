@@ -19,7 +19,7 @@ gridSize = zeros(1, dims);
 
 for d = 1:dims
     gridSize(d) = Npa(d);
-    kInd{d} = 2 * pi / L(d) * fftshift(floor(-(Npa(d)) / 2 : (Npa(d)) / 2 - 1)).';
+    kInd{d} = 2 * pi / L(d) * fftshift(floor(-Npa(d) / 2 : Npa(d) / 2 - 1)).';
 end
 
 % Initialize coefficient with ones of the final tensor shape

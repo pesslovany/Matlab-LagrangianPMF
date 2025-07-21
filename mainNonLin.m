@@ -1,5 +1,5 @@
 %%
-%   Lagrangian based grid-based filter with smoothing for simulated models.
+%   Lagrangian based grid-based filter for nonlinear models, simulated dataset.
 %   authors: Jakub Matousek, pesslovany@gmail.com
 %            Jindrich Dunik, dunikj@kky.zcu.cz, University of West Bohemia
 % See paper: TBD doi.
