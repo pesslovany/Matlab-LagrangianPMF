@@ -56,7 +56,7 @@ switch modelChoose
     case 2 % Nonholonomic robot with bearing‐only measurements
         landmarks = [  0, 10,  0, 10;
             0,  0, 10, 10 ];
-        model.kf      = 100;
+        model.kf      = 200;
         model.nx      = 3;                                    % [x; y; θ]
         model.nz      = size(landmarks,2);                    % one bearing per landmark
         model.dt      = 1;                                    % time step
