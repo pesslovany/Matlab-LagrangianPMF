@@ -22,14 +22,11 @@ function [cpd] = gbfDiffusionCPD(...
     U = predDensityCPD.U{d};
 
     % 1D convolution along the first dim, same size
-    Uhat{d} = convn(U, G(:), 'same');
+    Uhat{d} = convn(U, G', 'same');
   end
 
   % Deflate
   cpd = ktensor(predDensityCPD.lambda, Uhat);
-  if ncomponents(cpd) > Rdef
-    cpd = cp_als(cpd, Rdef);
-  end
 
   % Normalize
   Zsum       = sumTensor(cpd);
