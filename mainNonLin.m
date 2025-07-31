@@ -17,7 +17,7 @@ MC = 1;
 
 for mc = 1:1:MC
 
-    modelChoose = 1; % Which model to initialize
+    modelChoose = 2; % Which model to initialize
 
     model = initModelNonLin(modelChoose); % Initialize model
 
@@ -48,6 +48,7 @@ for mc = 1:1:MC
 
     % For cycle over time stes
     for k = 1:1:kf
+        disp(['Step:', num2str(k), '/', num2str(kf-1)])
 
         % Grid-based Filter
         tic
