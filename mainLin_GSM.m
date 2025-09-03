@@ -1,4 +1,4 @@
-%% Lagrangian Grid-Based Filter (LGbF) and others 
+%% Lagrangian Grid-Based Filter (LGbF) and others
 %   for real TAN dataset
 %   author: pesslovany@gmail.com
 
@@ -10,21 +10,22 @@ format shortG
 addpath(genpath(pwd)); % Add all files and subfolders in the current directory
 
 % Select Filters to Run
-runFlags.LGF_Standard = true;     % classic LGbF
+runFlags.LGbF_GMF = true;     % classic LGbF
+runFlags.LGbF_Standard = true;     % classic LGbF
 runFlags.LGbF_Spectral = true;     % spectral LGbF
-runFlags.RBPF = false;           % Rao-Blackewellized Particle Filter
+runFlags.RBPF = true;           % Rao-Blackewellized Particle Filter
 runFlags.PF = true;           % Bootstrap Particle Filter
 runFlags.UKF = true;           % Unscented Kalman Filter
 
 % Parameters and system simulation
-modelChoose = 4; % choose model: 3D = 3, 4D = 4
+modelChoose = 3; % choose model: 3D = 3, 4D = 4
 
 load('data.mat') % map of terrain
 vysky = griddedInterpolant(souradniceX',souradniceY',souradniceZ',"linear","none");
 
-timeSteps = 1:1:length(souradniceGNSS);
+timeSteps = 1:10%1:1:length(souradniceGNSS);
 endTime = length(timeSteps);
-MC = 10;
+MC = 1;
 
 for mc = 1:1:MC
     model = initModel(modelChoose, souradniceGNSS, hB, vysky);
@@ -36,12 +37,14 @@ for mc = 1:1:MC
 
     [predGrid, predGridDelta, gridDimOld, xOld, Ppold, ~] = gridCreation(meanX0,varX0,sFactor,nx,Npa);
     [predGrid2, predGridDelta2, gridDimOld2, xOld2, Ppold2, ~] = gridCreation(meanX0,varX0,sFactor,nx,Npa);
+    [predGrid3, predGridDelta3, gridDimOld3, xOld3, Ppold3, ~] = gridCreation(meanX0,varX0,sFactor,nx,Npa);
+
 
     pom = (predGrid - meanX0);
     denominator = sqrt((2*pi)^nx * det(varX0));
     predDensityProb  = exp(sum(-0.5 * pom'/(varX0) .* pom',2)) / denominator;
     predDensityProb2 = predDensityProb;
-    predPdf3         = predDensityProb;
+    predDensityProb3 = predDensityProb;
 
     ksiPrior = mvnrnd(meanX0,varX0,noPart)'; % initial condition for PF
 
@@ -62,12 +65,75 @@ for mc = 1:1:MC
     for k = 1:endTime-1
         disp(['Step:', num2str(k), '/', num2str(endTime-1)])
 
+        %% Standard LGBF + GMF
+        if runFlags.LGbF_GMF
+            tic
+            [measPdf3] = gbfMeasUpdate(predGrid3,nz,k,z(:,k),V,predDensityProb3,predGridDelta3(:,k),hfunct);
+            [measMeanGBF3(:,k), measVarGBF3(:,:,k)] = momentGbF(predGrid3, measPdf3, predGridDelta3(:,k));
+            measGrid3 = predGrid3;
+
+            % GSF Update
+            wbark = measPdf3;
+            wbark = wbark / sum(wbark);
+            Xbark = F * predGrid3 + u(:,k);
+            [s, n] = size(Xbark);
+            eye_s = eye(s);
+            xbark = Xbark * wbark;
+            chip_ = (Xbark - xbark);
+
+            % Compute Ps using optimal weighting
+            alpha = 1; % adjust alpha if needed
+            Ps = alpha * (4 / ((n) * (s + 2)))^(2 / (s + 4)) * (chip_ .* repmat(wbark', s, 1)) * chip_' + Q;
+            Ps = (Ps + Ps.') / 2;
+
+            H = Hh(Xbark,vysky);
+            Ht = permute(H, [2, 1, 3]);
+
+            % Measurement noise and Kalman gain
+            W = pagemtimes(pagemtimes(H, Ps), Ht) + R;
+            K = pagemrdivide(pagemtimes(Ps, Ht), W);
+
+            % Measurement residual and update
+            v = z(:, k+1) - hfunct(Xbark, zeros(nz, 1), k+1);
+            v = reshape(v, nz, 1, n);
+            vt = permute(v, [2, 1, 3]);
+            XkGSF = Xbark + reshape(pagemtimes(K, v), s, n);
+
+            % Posterior covariance update
+            KH = pagemtimes(K, H);
+            Kt = permute(K, [2, 1, 3]);
+            PkGSF = pagemtimes(pagemtimes(eye_s - KH, Ps), permute(eye_s - KH, [2, 1, 3])) + pagemtimes(pagemtimes(K, R), Kt);
+
+            % Weight update
+            wkGSF = log(wbark) - log(sqrt(reshape(prod(pageeig(W, 'vector'), 1), n, 1)))...
+                + reshape(-0.5 * pagemtimes(vt, pagemldivide(W, v)), n, 1);
+            m = max(wkGSF);
+            wkGSF = exp(wkGSF - (m + log(sum(exp(wkGSF - m)))));
+            wkGSF = wkGSF / sum(wkGSF);
+
+            % Compute state estimate and covariance
+            xhatk = XkGSF * wkGSF;
+            Phatk = sum(PkGSF .* reshape(wkGSF, 1, 1, []), 3);
+            nuxk = (XkGSF - xhatk);
+            Phatk = Phatk + nuxk .* repmat(wkGSF', s, 1) * nuxk';
+            Phatk = (Phatk + Phatk.') / 2;
+
+            xhatk = x(:,k+1);
+
+            [measPdf3,gridDimOld3, GridDelta3(:,k), measGridNew3, eigVect3] = measPdfInterp_GMF(measPdf3, ...
+                gridDimOld3,xOld3,Ppold3,Q,sFactor,nx,Npa,measMeanGBF3(:,k),measVarGBF3(:,:,k),F,xhatk,Phatk);
+            xOld3 = F * measMeanGBF3(:,k) + u(:,k);
+            Ppold3 = F * eigVect3;
+            [predDensityProb3,predGrid3,predGridDelta3] = gbfTimeUpdateFFT(F,measPdf3,measGridNew3,GridDelta3,k,Npa,invQ,predDenDenomW,nx,u(:,k));
+
+            tocPMF3(k) = toc;
+        end
+
         %% Standard GBF
-        if runFlags.LGF_Standard
+        if runFlags.LGbF_Standard
             tic
             [measPdf] = gbfMeasUpdate(predGrid,nz,k,z(:,k),V,predDensityProb,predGridDelta(:,k),hfunct);
             [measMeanGBF(:,k), measVarGBF(:,:,k)] = momentGbF(predGrid, measPdf, predGridDelta(:,k));
-            measGrid = predGrid;
 
             [measPdf,gridDimOld, GridDelta(:,k), measGridNew, eigVect] = measPdfInterp(measPdf, ...
                 gridDimOld,xOld,Ppold,Q,sFactor,nx,Npa,measMeanGBF(:,k),measVarGBF(:,:,k),F);
@@ -83,7 +149,6 @@ for mc = 1:1:MC
             tic
             [measPdf2] = gbfMeasUpdate(predGrid2,nz,k,z(:,k),V,predDensityProb2,predGridDelta2(:,k),hfunct);
             [measMeanSGBF(:,k), measVarSGBF(:,:,k)] = momentGbF(predGrid2, measPdf2, predGridDelta2(:,k));
-            measGrid2 = predGrid2;
 
             gridCenter = xOld2;
             gridRotation = Ppold2;
@@ -174,7 +239,11 @@ for mc = 1:1:MC
     end
 
     % Evaluation
-    if runFlags.LGF_Standard
+    if runFlags.LGbF_GMF
+        [rmsePMF3(:,mc), astdPMF3(:,mc), annesPMF3(mc)] = calcRes(x, measMeanGBF3, measVarGBF3, k); %#ok<*SAGROW>
+        tocPMFavg3(mc) = mean(tocPMF3);
+    end
+    if runFlags.LGbF_Standard
         [rmsePMF(:,mc), astdPMF(:,mc), annesPMF(mc)] = calcRes(x, measMeanGBF, measVarGBF, k); %#ok<*SAGROW>
         tocPMFavg(mc) = mean(tocPMF);
     end
@@ -196,7 +265,13 @@ for mc = 1:1:MC
 end
 
 % Post-Processed Statistics
-if runFlags.LGF_Standard
+if runFlags.LGbF_GMF
+    annes_PMFoutPom3  = sum(annesPMF3)  / (nx * mc * (k + 1));
+    rmsePMFout3       = mean(rmsePMF3 , 2);
+    astdPMFout3       = mean(astdPMF3 , 2);
+    tocPMFavgOut3     = mean(tocPMFavg3);
+end
+if runFlags.LGbF_Standard
     annes_PMFoutPom  = sum(annesPMF)  / (nx * mc * (k + 1));
     rmsePMFout       = mean(rmsePMF , 2);
     astdPMFout       = mean(astdPMF , 2);
@@ -230,7 +305,13 @@ end
 % Final Results Table
 rowNames = {};
 vals = {};
-if runFlags.LGF_Standard
+if runFlags.LGbF_GMF
+    rowNames{end+1} = 'LGbF GMF';
+    vals{end+1} = [rmsePMFout3(1), rmsePMFout3(2), rmsePMFout3(3), ...
+        astdPMFout3(1), astdPMFout3(2), astdPMFout3(3), ...
+        annes_PMFoutPom3, tocPMFavgOut3];
+end
+if runFlags.LGbF_Standard
     rowNames{end+1} = 'LGbF';
     vals{end+1} = [rmsePMFout(1), rmsePMFout(2), rmsePMFout(3), ...
         astdPMFout(1), astdPMFout(2), astdPMFout(3), ...
@@ -269,7 +350,7 @@ T2 = array2table(T2, ...
 disp(T2)
 
 % Trajectory Plots
-if runFlags.LGF_Standard, plot(x(1,:),x(2,:)); hold on; plot(measMeanGBF(1,:),measMeanGBF(2,:)); end
+if runFlags.LGbF_Standard, plot(x(1,:),x(2,:)); hold on; plot(measMeanGBF(1,:),measMeanGBF(2,:)); end
 if runFlags.LGbF_Spectral, plot(measMeanSGBF(1,:),measMeanSGBF(2,:)); end
 if runFlags.RBPF, plot(measMeanRBPF(1,:),measMeanRBPF(2,:)); end
 if runFlags.PF, plot(measMeanPF(1,:),measMeanPF(2,:)); end
