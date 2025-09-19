@@ -80,22 +80,7 @@ for mc = 1:1:MC
         xEst(:,k) = ksiPrior*w; % mean
         varEst(:,k) = ksiPrior.^2*w - xEst(:,k).^2; %var
 
-        % cumW = cumsum(w);
-        % randomN = rand(1,noPart);
-        % I = binarySearch(cumW, randomN, 'first');
-        % ksi = ksiPrior(:,I);
-
-        % O(n) Resampling without binary search or find
-        cumW = cumsum(w);
-        thresholds = (rand + (0:noPart-1)) / noPart;
-        resampleInd = zeros(1, noPart);
-        cumInd = 1;
-        for p = 1:noPart
-            while thresholds(p) >= cumW(cumInd)
-                cumInd = cumInd + 1;
-            end
-            resampleInd(p) = cumInd;
-        end
+        [resampleInd] = systematicResampling(w,noPart);
         ksi = ksiPrior(:, resampleInd);
 
         Qval = Q(ksi(end,ceil(length(ksi)/2)));

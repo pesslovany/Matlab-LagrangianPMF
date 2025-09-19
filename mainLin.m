@@ -10,14 +10,15 @@ format shortG
 addpath(genpath(pwd)); % Add all files and subfolders in the current directory
 
 % Select Filters to Run
-runFlags.LGF_Standard = true;     % classic LGbF
-runFlags.LGbF_Spectral = true;     % spectral LGbF
-runFlags.RBPF = true;           % Rao-Blackewellized Particle Filter
-runFlags.PF = true;           % Bootstrap Particle Filter
-runFlags.UKF = true;           % Unscented Kalman Filter
+runFlags.LGF_Standard = false;     % classic LGbF
+runFlags.LGbF_Spectral = false;     % spectral LGbF
+runFlags.RBPF = false;           % Rao-Blackewellized Particle Filter
+runFlags.PF = false;           % Bootstrap Particle Filter
+runFlags.UKF = false;           % Unscented Kalman Filter
+runFlags.EnGMF = true;          % Ensemble Gaussian Mixture Filter
 
 % Parameters and system simulation
-modelChoose = 3; % choose model: 3D = 3, 4D = 4
+modelChoose = 4; % choose model: 3D = 3, 4D = 4
 
 load('data.mat') % map of terrain
 vysky = griddedInterpolant(souradniceX',souradniceY',souradniceZ',"linear","none");
@@ -45,6 +46,8 @@ for mc = 1:1:MC
 
     ksiPrior = mvnrnd(meanX0,varX0,noPart)'; % initial condition for PF
 
+    ensemblePosterior = mvnrnd(meanX0,varX0,noEns)'; % initial condition for EnGMF
+
     % UKF init
     xp = meanX0;
     Pp = varX0;
@@ -59,8 +62,35 @@ for mc = 1:1:MC
     predXl = repmat(meanX0(xlid), 1, noPartRbpf);
     predPl = repmat(varX0(xlid,xlid), 1, 1, noPartRbpf);
 
+    measMeanEnGMF(:,1) = meanX0;
+    covEnGMF(:,:,1) = varX0;
+
     for k = 1:endTime-1
         disp(['Step:', num2str(k), '/', num2str(endTime-1)])
+
+        %% Ensemble- Gaussian Mixture Filter
+        if runFlags.EnGMF
+        tic
+
+        wbark = ones(noEns,1);
+        wbark = wbark/(sum(wbark));
+        Xbark = F*ensemblePosterior;
+        Ps = diracToGaussMix(Xbark,wbark,Q);
+
+        [XkGSF,PkGSF,wkGSF] = ukfGSMupdate(Xbark,wbark,nx,Ps,z,k,hfunct,R);
+        
+        measMeanEnGMF(:,k+1) = XkGSF * wkGSF;
+        covEnGMF(:,:,k+1) = sum(PkGSF .* reshape(wkGSF,1,1,[]), 3);
+        nuxk  = XkGSF - measMeanEnGMF(:,k+1);
+        covEnGMF(:,:,k+1) = covEnGMF(:,:,k+1) + (nuxk .* repmat(wkGSF',nx,1)) * nuxk';
+        covEnGMF(:,:,k+1) = (covEnGMF(:,:,k+1) + covEnGMF(:,:,k+1).')/2;
+
+        resampleInd = systematicResampling(wkGSF,noEns);
+
+        [ensemblePosterior] = realisationOfGauss(resampleInd,XkGSF,PkGSF);
+
+        tocEnGMF(k) = toc; 
+        end
 
         %% Standard GBF
         if runFlags.LGF_Standard
@@ -126,23 +156,7 @@ for mc = 1:1:MC
             measMeanPF(:,k) = ksiPrior*w; % mean filtering estimate
             measVarPF(:,:,k) = diag(ksiPrior.^2*w - measMeanPF(:,k).^2); % diagonal of filtering covariance matrix
 
-            % % Resampling
-            % cumW = cumsum(w);
-            % randomN = rand(1,noPart);
-            % I = binarySearch(cumW, randomN, 'first');
-            % ksi = ksiPrior(:,I);
-
-            % O(n) Resampling without binary search or find
-            cumW = cumsum(w);
-            thresholds = (rand + (0:noPart-1)) / noPart;
-            resampleInd = zeros(1, noPart);
-            cumInd = 1;
-            for p = 1:noPart
-                while thresholds(p) >= cumW(cumInd)
-                    cumInd = cumInd + 1;
-                end
-                resampleInd(p) = cumInd;
-            end
+            [resampleInd] = systematicResampling(w,noPart);
             ksi = ksiPrior(:, resampleInd);
 
             % Time Update
@@ -192,6 +206,9 @@ for mc = 1:1:MC
     if runFlags.UKF
         [rmseUKF(:,mc), astdUKF(:,mc), annesUKF(mc)] = calcRes(x, measMeanUKF, measVarUKF, k);
     end
+    if runFlags.EnGMF
+        [rmseEnGMF(:,mc), astdEnGMF(:,mc), annesEnGMF(mc)] = calcRes(x, measMeanEnGMF, covEnGMF, k);
+    end
 
 end
 
@@ -225,6 +242,12 @@ if runFlags.UKF
     rmseUKFout      = mean(rmseUKF, 2);
     astdUKFout      = mean(astdUKF, 2);
     tocUKFavgout    = mean(tocUKF);
+end
+if runFlags.EnGMF
+    annes_EnGMFoutPom = sum(annesEnGMF) / (nx * mc * (k + 1));
+    rmseEnGMFout      = mean(rmseEnGMF, 2);
+    astdEnGMFout      = mean(astdEnGMF, 2);
+    tocEnGMFavgout    = mean(tocEnGMF);
 end
 
 % Final Results Table
@@ -260,6 +283,12 @@ if runFlags.UKF
         astdUKFout(1), astdUKFout(2), astdUKFout(3), ...
         annes_UKFoutPom, tocUKFavgout];
 end
+if runFlags.EnGMF
+    rowNames{end+1} = 'En-GMF';
+    vals{end+1} = [rmseEnGMFout(1), rmseEnGMFout(2), rmseEnGMFout(3), ...
+        astdEnGMFout(1), astdEnGMFout(2), astdEnGMFout(3), ...
+        annes_EnGMFoutPom, tocEnGMFavgout];
+end
 
 T2 = cell2mat(vals');
 T2 = array2table(T2, ...
@@ -269,9 +298,12 @@ T2 = array2table(T2, ...
 disp(T2)
 
 % Trajectory Plots
-if runFlags.LGF_Standard, plot(x(1,:),x(2,:)); hold on; plot(measMeanGBF(1,:),measMeanGBF(2,:)); end
+plot(x(1,:),x(2,:)); hold on;
+if runFlags.LGF_Standard, plot(measMeanGBF(1,:),measMeanGBF(2,:)); end
 if runFlags.LGbF_Spectral, plot(measMeanSGBF(1,:),measMeanSGBF(2,:)); end
 if runFlags.RBPF, plot(measMeanRBPF(1,:),measMeanRBPF(2,:)); end
 if runFlags.PF, plot(measMeanPF(1,:),measMeanPF(2,:)); end
 if runFlags.UKF, plot(measMeanUKF(1,:),measMeanUKF(2,:)); end
+if runFlags.EnGMF, plot(measMeanEnGMF(1,:),measMeanEnGMF(2,:)); end
+
 

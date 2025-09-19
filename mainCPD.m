@@ -147,23 +147,7 @@ while mc <= MC
                 measMeanPF(:,k) = ksiPrior*w; % mean filtering estimate
                 measVarPF(:,:,k) = diag(ksiPrior.^2*w - measMeanPF(:,k).^2); % diagonal of filtering covariance matrix
 
-                % % Resampling
-                % cumW = cumsum(w);
-                % randomN = rand(1,noPart);
-                % I = binarySearch(cumW, randomN, 'first');
-                % ksi = ksiPrior(:,I);
-
-                % O(n) Resampling without binary search or find
-                cumW = cumsum(w);
-                thresholds = (rand + (0:noPart-1)) / noPart;
-                resampleInd = zeros(1, noPart);
-                cumInd = 1;
-                for p = 1:noPart
-                    while thresholds(p) >= cumW(cumInd)
-                        cumInd = cumInd + 1;
-                    end
-                    resampleInd(p) = cumInd;
-                end
+                [resampleInd] = systematicResampling(w,noPart);
                 ksi = ksiPrior(:, resampleInd);
 
                 % Time Update
@@ -339,7 +323,7 @@ T2 = array2table(T2, ...
 disp(T2)
 
 %Trajectory Plots
-plot(x(1,:),x(2,:)); hold on; 
+plot(x(1,:),x(2,:)); hold on;
 if runFlags.LGbF_Standard, plot(measMeanGBF(1,:),measMeanGBF(2,:)); end
 if runFlags.LGbF_Spectral, plot(measMeanSGBF(1,:),measMeanSGBF(2,:)); end
 if runFlags.RBPF, plot(measMeanRBPF(1,:),measMeanRBPF(2,:)); end
