@@ -14,7 +14,7 @@ runFlags.LGF_Standard = false;     % classic LGbF
 runFlags.LGbF_Spectral = false;     % spectral LGbF
 runFlags.RBPF = false;           % Rao-Blackewellized Particle Filter
 runFlags.PF = false;           % Bootstrap Particle Filter
-runFlags.UKF = false;           % Unscented Kalman Filter
+runFlags.UKF = true;           % Unscented Kalman Filter
 runFlags.EnGMF = true;          % Ensemble Gaussian Mixture Filter
 
 % Parameters and system simulation
@@ -67,6 +67,8 @@ for mc = 1:1:MC
 
     for k = 1:endTime-1
         disp(['Step:', num2str(k), '/', num2str(endTime-1)])
+
+        %% Auxiliary Ensemble - Gaussian Mixture Filter
 
         %% Ensemble- Gaussian Mixture Filter
         if runFlags.EnGMF
