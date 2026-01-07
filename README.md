@@ -4,7 +4,7 @@ This repository implements Lagrangian grid based filter for Terrain aided naviga
 
 __publication: IEEE Signal Processing Magazine 10.1109/MSP.2024.3489969__ about the LGbF.
 
-__publication: TBD__ about the Spectral LGbF. (In review for IEEE TAES.)
+__publication: IEEE Transactions on Aerospace and Electronic Systems 10.1109/TAES.2025.3636858__ about the Spectral LGbF.
 
 __publication: TBD__ survey about GbFs. (In review for IJCAS.)
 
