@@ -6,11 +6,11 @@ __publication: IEEE Signal Processing Magazine 10.1109/MSP.2024.3489969__ about 
 
 __publication: IEEE Transactions on Aerospace and Electronic Systems 10.1109/TAES.2025.3636858__ about the Spectral LGbF.
 
-__publication: TBD__ survey about GbFs. (In review for IJCAS.)
+__publication: TBD__ survey about GbFs. (In print for International Journal of Control, Automation, and Systems (IJCAS).)
 
-__publication: TBD__ on tensor decompositions for LGbF. (In preparation.)
+__publication: TBD__ on tensor decompositions for LGbF. (In review for FUSION.)
 
-__publication: TBD__ LGbF for nonlinear invertible models. (In preparation.)
+__publication: TBD__ LGbF for nonlinear invertible models. (In print for IFAC Journal of Systems and Control,.)
 
 For more information please read the paper. 
 
