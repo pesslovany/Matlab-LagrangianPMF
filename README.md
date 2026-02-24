@@ -10,11 +10,9 @@ __publication: TBD__ survey about GbFs. (In print for International Journal of C
 
 __publication: TBD__ on tensor decompositions for LGbF. (In review for FUSION.)
 
-__publication: TBD__ LGbF for nonlinear invertible models. (In print for IFAC Journal of Systems and Control,.)
+__publication: IFAC Journal of Systems and Control 10.1016/j.ifacsc.2026.100385__ LGbF for nonlinear invertible models.
 
-For more information please read the paper. 
-
-__If you are using this code for a publication, please cite the papers.__
+__If you are using this code for a publication, please cite the appropriate paper.__
 
 The parameters of the filters and models used for the publication results are described here and also in the file initModel.m. 
 
