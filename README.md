@@ -6,7 +6,7 @@ __publication: IEEE Signal Processing Magazine 10.1109/MSP.2024.3489969__ about 
 
 __publication: IEEE Transactions on Aerospace and Electronic Systems 10.1109/TAES.2025.3636858__ about the Spectral LGbF.
 
-__publication: TBD__ survey about GbFs. (In print for International Journal of Control, Automation, and Systems (IJCAS).)
+__publication: International Journal of Control, Automation, and Systems 10.1007/s12555-026-00034-5__ survey about GbFs.
 
 __publication: TBD__ on tensor decompositions for LGbF. (In review for FUSION.)
 
