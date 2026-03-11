@@ -19,7 +19,7 @@ gridSize = zeros(1, dims);
 
 for d = 1:dims
     gridSize(d) = Npa(d);
-    kInd{d} = 2 * pi / L(d) * fftshift(floor(-Npa(d) / 2 : Npa(d) / 2 - 1)).';
+    kInd{d} = 2 * pi / L(d) * ifftshift(-(Npa(d)-1)/2 : (Npa(d)-1)/2).';
 end
 
 % Initialize coefficient with ones of the final tensor shape
@@ -48,9 +48,9 @@ coeficienty = exp(-coeficienty);
 
 % dims = 1:1:nx;
 u = filtDenDOTprodDeltasCub;
-u = fftn(u);
+u = fftn(ifftshift(u));
 u = (coeficienty).*u;
-predDensityProb2cub = real(ifftn(u)); % realna cast
+predDensityProb2cub = fftshift(real(ifftn(u))); % realna cast
 
 predDensityProb = reshape(predDensityProb2cub,length(predGrid),1); % back to computational space
 
