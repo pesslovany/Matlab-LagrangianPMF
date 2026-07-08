@@ -8,7 +8,7 @@ __publication: IEEE Transactions on Aerospace and Electronic Systems 10.1109/TAE
 
 __publication: International Journal of Control, Automation, and Systems 10.1007/s12555-026-00034-5__ survey about GbFs.
 
-__publication: TBD__ on tensor decompositions for LGbF. (In review for FUSION.)
+__publication: TBD__ on tensor decompositions for LGbF. __Won the best paper award.__ (To be published in proccedings of FUSION 2026.)
 
 __publication: IFAC Journal of Systems and Control 10.1016/j.ifacsc.2026.100385__ LGbF for nonlinear invertible models.
 
